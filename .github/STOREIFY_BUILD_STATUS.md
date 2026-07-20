@@ -1,5 +1,5 @@
 # Storefy 3 build status
 
-- Status: failure
-- Source commit: 98f4ae5271ea159a3eff976d874bc5cc679e68e5
-- Workflow run: 29718643183
+- Status: success
+- Source commit: cb1d3967b513fc01db4a694e14cb04d93ca5ba16
+- Workflow run: 29718720621
