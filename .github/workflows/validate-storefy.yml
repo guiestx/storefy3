@@ -46,3 +46,24 @@ jobs:
 
       - name: Build Vben application
         run: pnpm build:antd
+
+      - name: Record validation result
+        if: always()
+        shell: bash
+        env:
+          BUILD_STATUS: ${{ job.status }}
+          SOURCE_SHA: ${{ github.sha }}
+          WORKFLOW_RUN: ${{ github.run_id }}
+        run: |
+          git config user.name "Storefy CI"
+          git config user.email "actions@users.noreply.github.com"
+          cat > .github/STOREIFY_BUILD_STATUS.md <<EOF
+          # Storefy 3 build status
+
+          - Status: ${BUILD_STATUS}
+          - Source commit: ${SOURCE_SHA}
+          - Workflow run: ${WORKFLOW_RUN}
+          EOF
+          git add .github/STOREIFY_BUILD_STATUS.md
+          git commit -m "ci: record Storefy build ${BUILD_STATUS} [skip ci]" || exit 0
+          git push origin HEAD:main
