@@ -14,7 +14,7 @@ export async function getUserInfoApi(): Promise<UserInfo> {
   const { data: membership, error: membershipError } = await supabase
     .from('memberships')
     .select(
-      'role, display_name, job_title, organizations(id, name, slug)',
+      'organization_id, role, display_name, job_title, organizations(id, name, slug)',
     )
     .eq('user_id', session.user.id)
     .eq('status', 'active')
