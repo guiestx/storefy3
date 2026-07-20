@@ -1,5 +1,4 @@
 import {
-  appCopyrightPreferences,
   defineOverridesPreferences,
   definePreferencesExtension,
 } from '@vben/preferences';
@@ -11,17 +10,30 @@ interface WebAntdPreferencesExtension {
   tenantMode: 'multi' | 'single';
 }
 
-/**
- * @description 项目配置文件
- * 只需要覆盖项目中的一部分配置，不需要的配置不用覆盖，会自动使用默认配置
- * !!! 更改配置后请清空缓存，否则可能不生效
- */
 export const overridesPreferences = defineOverridesPreferences({
-  // overrides
   app: {
+    accessMode: 'frontend',
+    authPageLayout: 'panel-right',
+    defaultHomePath: '/dashboard/overview',
+    enableCheckUpdates: false,
+    locale: 'en-US',
     name: import.meta.env.VITE_APP_TITLE,
+    timezone: 'America/Sao_Paulo',
   },
-  copyright: appCopyrightPreferences,
+  copyright: {
+    companyName: 'Storefy',
+    companySiteLink: '',
+    date: '2026',
+    enable: false,
+    icp: '',
+    icpLink: '',
+    settingShow: false,
+  },
+  widget: {
+    languageToggle: false,
+    lockScreen: false,
+    timezone: false,
+  },
 });
 
 export const preferencesExtension =
@@ -65,7 +77,7 @@ export const preferencesExtension =
       },
       {
         component: 'input',
-        defaultValue: '',
+        defaultValue: 'Storefy',
         key: 'reportTitle',
         label: 'preferences.antd.fields.reportTitle.label',
         placeholder: 'preferences.antd.fields.reportTitle.placeholder',
