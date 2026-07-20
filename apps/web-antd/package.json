@@ -1,6 +1,6 @@
 {
-  "name": "@storefy/web-admin",
-  "version": "0.1.0",
+  "name": "@vben/web-antd",
+  "version": "5.7.0",
   "private": true,
   "type": "module",
   "scripts": {
