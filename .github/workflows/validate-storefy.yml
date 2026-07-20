@@ -9,6 +9,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: storefy-validation-main
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,44 +30,73 @@ jobs:
       - name: Enable pnpm
         run: corepack enable
 
-      - name: Install dependencies and refresh lockfile
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Persist lockfile update
-        shell: bash
-        run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
-            exit 0
-          fi
-          git config user.name "Storefy CI"
-          git config user.email "actions@users.noreply.github.com"
-          git add pnpm-lock.yaml
-          git commit -m "chore: refresh pnpm lockfile [skip ci]"
-          git push origin HEAD:main
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Typecheck Vben application
-        run: pnpm -F @vben/web-antd typecheck
+        id: typecheck
+        shell: bash
+        run: |
+          set +e
+          pnpm -F @vben/web-antd typecheck 2>&1 | tee /tmp/storefy-typecheck.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Build Vben application
-        run: pnpm build:antd
+        id: build
+        if: steps.typecheck.outputs.exit_code == '0'
+        shell: bash
+        run: |
+          set +e
+          pnpm build:antd 2>&1 | tee /tmp/storefy-build.log
+          code=${PIPESTATUS[0]}
+          echo "exit_code=${code}" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Record validation result
         if: always()
         shell: bash
         env:
-          BUILD_STATUS: ${{ job.status }}
+          BUILD_CODE: ${{ steps.build.outputs.exit_code }}
           SOURCE_SHA: ${{ github.sha }}
+          TYPECHECK_CODE: ${{ steps.typecheck.outputs.exit_code }}
           WORKFLOW_RUN: ${{ github.run_id }}
         run: |
+          typecheck_code=${TYPECHECK_CODE:-1}
+          build_code=${BUILD_CODE:-1}
+          if [ "$typecheck_code" = "0" ] && [ "$build_code" = "0" ]; then
+            validation_status=success
+          else
+            validation_status=failure
+          fi
+
           git config user.name "Storefy CI"
           git config user.email "actions@users.noreply.github.com"
-          cat > .github/STOREIFY_BUILD_STATUS.md <<EOF
-          # Storefy 3 build status
+          {
+            echo '# Storefy 3 build status'
+            echo
+            echo "- Status: ${validation_status}"
+            echo "- Source commit: ${SOURCE_SHA}"
+            echo "- Workflow run: ${WORKFLOW_RUN}"
+            echo "- Typecheck exit code: ${typecheck_code}"
+            echo "- Build exit code: ${build_code}"
+            echo
+            echo '## Typecheck output'
+            echo '```text'
+            tail -n 160 /tmp/storefy-typecheck.log 2>/dev/null || true
+            echo '```'
+            echo
+            echo '## Build output'
+            echo '```text'
+            tail -n 120 /tmp/storefy-build.log 2>/dev/null || true
+            echo '```'
+          } > .github/STOREIFY_BUILD_STATUS.md
 
-          - Status: ${BUILD_STATUS}
-          - Source commit: ${SOURCE_SHA}
-          - Workflow run: ${WORKFLOW_RUN}
-          EOF
           git add .github/STOREIFY_BUILD_STATUS.md
-          git commit -m "ci: record Storefy build ${BUILD_STATUS} [skip ci]" || exit 0
-          git push origin HEAD:main
+          git commit -m "ci: record Storefy build ${validation_status} [skip ci]" || true
+          git push origin HEAD:main || true
+
+          if [ "$validation_status" != "success" ]; then
+            exit 1
+          fi
