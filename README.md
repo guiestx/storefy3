@@ -1,3 +1,14 @@
+# Storefy 3
+
+Painel administrativo da Storefy construído sobre Vben Admin 5.7.0, Vue 3, Vite, TypeScript, Ant Design Vue e Supabase.
+
+- Produção: `storefy3.vercel.app`
+- Aplicação principal: `apps/web-antd`
+- Build: `pnpm build:antd`
+- Dados: projeto Supabase `storefy`
+
+---
+
 <div align="center">
   <a href="https://github.com/anncwb/vue-vben-admin">
     <img alt="VbenAdmin Logo" width="215" src="https://unpkg.com/@vbenjs/static-source@0.1.7/source/logo-v1.webp">
